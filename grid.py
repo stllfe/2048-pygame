@@ -114,13 +114,13 @@ class Grid:
         if y == self._height - 1:
             return False
 
-        for by in range(y + 1, self._height):
-            if self._grid[by][x] not in (0, value):
+        for dy in range(y + 1, self._height):
+            if self._grid[dy][x] not in (0, value):
                 return False
 
             self._grid[y][x] = 0
-            self._grid[by][x] += value
-            y = by
+            self._grid[dy][x] += value
+            y = dy
 
         return True
 
@@ -164,10 +164,10 @@ class Grid:
         elif direction is Direction.DOWN:
             merge_func = self._merge_down
         else:
-            raise TypeError()
+            raise TypeError(f"Expected type `{Direction}`, "
+                            f"got {type(direction)} instead.")
 
         for y, row in enumerate(self._grid):
             for x, value in enumerate(row):
-                if value == 0:
-                    continue
-                merge_func(x, y, value)
+                if value:
+                    merge_func(x, y, value)
