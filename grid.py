@@ -43,16 +43,16 @@ class Grid:
         self._grid = [[0 for _ in range(self._width)]
                       for _ in range(self._height)]
 
-    def move_up(self):
+    def merge_up(self):
         self._merge(Direction.UP)
 
-    def move_down(self):
+    def merge_down(self):
         self._merge(Direction.DOWN)
 
-    def move_left(self):
+    def merge_left(self):
         self._merge(Direction.LEFT)
 
-    def move_right(self):
+    def merge_right(self):
         self._merge(Direction.RIGHT)
 
     def add_tile(self):
