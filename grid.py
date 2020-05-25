@@ -36,6 +36,10 @@ class Grid:
         return self._height
 
     def clear(self):
+        """
+        Fill the entire grid with empty slots.
+        :return: None
+        """
         self._grid = [[0 for _ in range(self._width)]
                       for _ in range(self._height)]
 
@@ -52,22 +56,33 @@ class Grid:
         self._merge(Direction.RIGHT)
 
     def add_tile(self):
+        """
+        Insert new tile if there is an empty slot.
+        :return: bool True if inserted, False otherwise
+        """
         next_val = self._get_next_value()
         next_pos = self._get_next_empty()
 
         if next_pos:
             x, y = next_pos
             self._grid[y][x] = next_val
+            return True
+
+        return False
 
     @staticmethod
     def _get_next_value():
+        """
+        Get next random value for a new tile.
+        :return: int 2 or 4
+        """
         return random.choice([2, 4])
 
     def _get_next_empty(self):
         """
         Get next empty slot in the grid.
         :return: tuple (x, y) of a randomly chosen empty position
-                 int -1 if there are no empty slots
+                 bool False if there are no empty slots
         """
         empty_tiles = list()
 
@@ -93,7 +108,7 @@ class Grid:
             self._grid[ty][x] += value
             y = ty
 
-        return False
+        return True
 
     def _merge_down(self, x, y, value):
         if y == self._height - 1:
@@ -107,7 +122,7 @@ class Grid:
             self._grid[by][x] += value
             y = by
 
-        return False
+        return True
 
     def _merge_left(self, x, y, value):
         if x == 0:
@@ -121,7 +136,7 @@ class Grid:
             self._grid[y][lx] += value
             x = lx
 
-        return False
+        return True
 
     def _merge_right(self, x, y, value):
         if x == self._width - 1:
@@ -135,7 +150,7 @@ class Grid:
             self._grid[y][rx] += value
             x = rx
 
-        return False
+        return True
 
     def _merge(self, direction: Direction):
         merge_func = None
