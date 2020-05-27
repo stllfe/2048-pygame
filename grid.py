@@ -1,12 +1,81 @@
 import random
+
+from typing import List, Optional, Iterable
 from enum import Enum
 
 
+class Position:
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):
+        if isinstance(other, Position):
+            return self.x == other.x and self.y == other.y
+
+        return super().__eq__(other)
+
+
 class Direction(Enum):
-    LEFT = (-1, 0)
-    RIGHT = (1, 0)
-    UP = (0, -1)
-    DOWN = (0, 1)
+
+    LEFT = Position(-1, 0)
+    RIGHT = Position(1, 0)
+    UP = Position(0, -1)
+    DOWN = Position(0, 1)
+
+
+class Tile:
+
+    def __init__(self, position: Position, value: int):
+        self._position = position
+        self._value = value
+
+        self._previous_position = None
+        self._merged_from = tuple()
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def x(self):
+        return self._position.x
+
+    @property
+    def y(self):
+        return self._position.y
+
+    @property
+    def merged_from(self):
+        return self._merged_from
+
+    @merged_from.setter
+    def merged_from(self, _iter: Iterable):
+        if not _iter:
+            _iter = tuple()
+
+        for item in _iter:
+            if not isinstance(item, Tile):
+                raise TypeError("Tile can only be merged from other tiles. "
+                                f"Got `{type(item)}` instead.")
+
+        self._merged_from = tuple(_iter)
+
+    @property
+    def previous_position(self):
+        return self._previous_position
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, other: Position):
+
+        # Backup position
+        self._previous_position = self._position
+        self._position = other
 
 
 class Grid:
@@ -14,160 +83,103 @@ class Grid:
     def __init__(self, width, height):
         self._width = width
         self._height = height
-        self._grid = None
+        self._cells = None
 
-        self.clear()
-        self.add_tile()
+        self.empty()
 
     def __str__(self):
         s = ''
-        for row in self._grid:
-            for t in row:
-                s += '[{}]'.format(t if t else ' ')
+        for row in self._cells:
+            for tile in row:
+                s += '[{}]'.format(tile.value if tile else ' ')
             s += '\n'
         return s
 
     @property
-    def width(self):
+    def cells(self) -> List[List]:
+        return self._cells
+
+    @property
+    def width(self) -> int:
         return self._width
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._height
 
-    def clear(self):
+    def empty(self) -> None:
         """
-        Fill the entire grid with empty slots.
+        Build the grid and fill it with empty cells.
         :return: None
         """
-        self._grid = [[0 for _ in range(self._width)]
-                      for _ in range(self._height)]
+        self._cells = [[None for _ in range(self._width)]
+                       for _ in range(self._height)]
 
-    def merge_up(self):
-        self._merge(Direction.UP)
-
-    def merge_down(self):
-        self._merge(Direction.DOWN)
-
-    def merge_left(self):
-        self._merge(Direction.LEFT)
-
-    def merge_right(self):
-        self._merge(Direction.RIGHT)
-
-    def add_tile(self):
+    def insert_tile(self, tile: Tile) -> bool:
         """
-        Insert new tile if there is an empty slot.
+        Insert new tile at its _position.
         :return: bool True if inserted, False otherwise
         """
-        next_val = self._get_next_value()
-        next_pos = self._get_next_empty()
 
-        if next_pos:
-            x, y = next_pos
-            self._grid[y][x] = next_val
-            return True
+        if not self.is_within(tile.position) or not tile:
+            return False
 
-        return False
+        self._cells[tile.y][tile.x] = tile
+        return True
 
-    @staticmethod
-    def _get_next_value():
+    def remove_tile(self, tile: Tile) -> bool:
         """
-        Get next random value for a new tile.
-        :return: int 2 or 4
+        Remove tile at its _position if there is one.
+        :return: bool True if removed, False otherwise
         """
-        return random.choice([2, 4])
 
-    def _get_next_empty(self):
+        if not self.is_within(tile.position) or self.is_cell_empty(tile.position):
+            return False
+
+        self._cells[tile.y][tile.x] = None
+        return True
+
+    @property
+    def tiles(self):
+        tiles = list()
+
+        for y, row in enumerate(self._cells):
+            for x, tile in enumerate(row):
+                if tile:
+                    tiles.append(tile)
+        return tiles
+
+    def get_cell(self, position: Position) -> Optional[Tile]:
+        if self.is_within(position):
+            return self._cells[position.y][position.x]
+
+    def is_cell_filled(self, position: Position) -> bool:
+        return not self.is_cell_empty(position)
+
+    def is_cell_empty(self, position: Position) -> bool:
+        return not self._cells[position.y][position.x]
+
+    def is_within(self, position: Position) -> bool:
+        return (0 <= position.y < self._height and
+                0 <= position.x < self._width)
+
+    def has_available_cells(self) -> bool:
+        return self.get_empty_cell() is not None
+
+    def get_empty_cell(self) -> Optional[Position]:
         """
-        Get next empty slot in the grid.
-        :return: tuple (x, y) of a randomly chosen empty position
-                 bool False if there are no empty slots
+        Get next empty cell in the grid.
+        :return: tuple (x, y) of a randomly chosen empty cell
+                 None if there are no empty cells
         """
         empty_tiles = list()
 
-        for y, row in enumerate(self._grid):
+        for y, row in enumerate(self._cells):
             for x, tile in enumerate(row):
-                if tile == 0:
-                    empty_tiles.append((x, y))
+                if not tile:
+                    empty_tiles.append(Position(x, y))
 
         if empty_tiles:
             return random.choice(empty_tiles)
 
-        return False
-
-    def _merge_up(self, x, y, value):
-        if y == 0:
-            return False
-
-        for ty in range(y - 1, -1, -1):
-            if self._grid[ty][x] not in (0, value):
-                return False
-
-            self._grid[y][x] = 0
-            self._grid[ty][x] += value
-            y = ty
-
-        return True
-
-    def _merge_down(self, x, y, value):
-        if y == self._height - 1:
-            return False
-
-        for dy in range(y + 1, self._height):
-            if self._grid[dy][x] not in (0, value):
-                return False
-
-            self._grid[y][x] = 0
-            self._grid[dy][x] += value
-            y = dy
-
-        return True
-
-    def _merge_left(self, x, y, value):
-        if x == 0:
-            return False
-
-        for lx in range(x - 1, -1, -1):
-            if self._grid[y][lx] not in (0, value):
-                return False
-
-            self._grid[y][x] = 0
-            self._grid[y][lx] += value
-            x = lx
-
-        return True
-
-    def _merge_right(self, x, y, value):
-        if x == self._width - 1:
-            return False
-
-        for rx in range(x + 1, self._width):
-            if self._grid[y][rx] not in (0, value):
-                return False
-
-            self._grid[y][x] = 0
-            self._grid[y][rx] += value
-            x = rx
-
-        return True
-
-    def _merge(self, direction: Direction):
-        merge_func = None
-
-        if direction is Direction.LEFT:
-            merge_func = self._merge_left
-        elif direction is Direction.RIGHT:
-            merge_func = self._merge_right
-        elif direction is Direction.UP:
-            merge_func = self._merge_up
-        elif direction is Direction.DOWN:
-            merge_func = self._merge_down
-        else:
-            raise TypeError(f"Expected type `{Direction}`, "
-                            f"got {type(direction)} instead.")
-
-        for y, row in enumerate(self._grid):
-            for x, value in enumerate(row):
-                if value:
-                    merge_func(x, y, value)
+        return None

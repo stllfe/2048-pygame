@@ -1,0 +1,6 @@
+width: 4
+height: 4
+
+start_tiles: 2
+username: Player
+win_score: 2048
