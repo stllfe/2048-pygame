@@ -1,8 +1,8 @@
 import random
 
-from argparse import Namespace
 from itertools import product
-from typing import Optional
+from argparse import Namespace
+from typing import Optional, Iterator
 
 from grid import (
     Direction,
@@ -12,57 +12,109 @@ from grid import (
 )
 
 
-def _next_position(position: Position, direction: Direction):
+def _next_position(position: Position, direction: Direction) -> Position:
     x = position.x + direction.value.x
     y = position.y + direction.value.y
     return Position(x, y)
 
 
+class LogicState:
+    pass
+
+
 class Logic:
 
     def __init__(self, params: Namespace):
-        self.grid = Grid(width=params.width, height=params.height)
-        self.start_tiles = params.start_tiles
-        self.win_score = params.win_score
-        self.score = 0
-        self.setup()
+        self._grid = Grid(width=params.width, height=params.height)
+        self._start_tiles = params.start_tiles
+        self._merged_total = 0
 
-    def random_tile(self):
-        if self.grid.has_available_cells():
+    @property
+    def grid(self) -> Grid:
+        return self._grid
+
+    @property
+    def start_tiles(self) -> int:
+        return self._start_tiles
+
+    @property
+    def merged_total(self) -> int:
+        return self._merged_total
+
+    def random_tile(self) -> Optional[Tile]:
+        """Produce a new ``Tile`` with random value and position.
+
+        If there are no empty cells in the grid returns ``None``.
+
+        :return: Tile object or None if no available cells found.
+        """
+
+        if self._grid.has_available_cells():
             value = 4 if random.random() < 0.1 else 2
-            return Tile(self.grid.get_empty_cell(), value)
+            return Tile(self._grid.get_empty_cell(), value)
 
-    def setup(self):
-        self.grid.empty()
-        for _ in range(self.start_tiles):
+    def save_state(self) -> LogicState:
+        pass
+
+    def load_state(self, state: LogicState) -> bool:
+        pass
+
+    def setup(self) -> bool:
+        """Clears the grid and inserts ``start_tiles`` number of tiles.
+
+        :return: bool False if couldn't insert the number of tiles given,
+                 True otherwise
+        """
+
+        self._grid.empty()
+        for _ in range(self._start_tiles):
             if not self.insert_random_tile():
-                return
+                return False
+        return True
 
     def insert_random_tile(self):
-        tile = self.random_tile()
         # todo: add a docstring
+        tile = self.random_tile()
         if tile:
-            self.grid.insert_tile(tile)
+            self._grid.insert_tile(tile)
             return True
         return False
 
-    def right(self):
-        self._move(Direction.RIGHT)
+    def move(self, direction: Direction):
+        """Moves all the tiles in the given direction and merges them if needed.
 
-    def left(self):
-        self._move(Direction.LEFT)
+        :param direction:
+        :return:
+        """
 
-    def down(self):
-        self._move(Direction.DOWN)
+        # Remove tiles metadata from the previous move
+        self._clean_tiles_metadata()
 
-    def up(self):
-        self._move(Direction.UP)
+        for position in self._traversals(direction):
+            tile = self._grid.get_cell(position)
+
+            if not tile:
+                continue
+
+            # Move the tile to the farthest empty position before the first obstacle
+            self._move_tile(tile, self._farthest_position(tile, direction))
+
+            # If the nearest obstacle in that direction is a tile
+            # check for merge and merge if possible
+            if self._is_merge_available(tile, direction):
+                closest = self._next_merge(tile, direction)
+                merged = self._merge_tiles(tile, closest)
+                self._merged_total += merged.value
+
+        self.insert_random_tile()
 
     def _next_merge(self, tile: Tile, direction: Direction) -> Optional[Tile]:
+        # todo: add a docstring
+
         position = _next_position(tile.position, direction)
 
-        if self.grid.is_within(position) and self.grid.is_cell_filled(position):
-            candidate = self.grid.get_cell(position)
+        if self._grid.is_within(position) and self._grid.is_cell_filled(position):
+            candidate = self._grid.get_cell(position)
             if candidate.value == tile.value and not candidate.merged_from:
                 return candidate
 
@@ -70,44 +122,62 @@ class Logic:
         return self._next_merge(tile, direction) is not None
 
     def _farthest_position(self, tile: Tile, direction: Direction) -> Position:
-        # todo: update docstring
-        """
-        Returns the farthest position before an obstacle.
-        :param direction:
-        :return:
+        """Returns ``Position`` object of the farthest position before the first obstacle.
+
+        :param direction: direction towards the destination position
+        :return: Position object
         """
 
         current = tile.position
         position = _next_position(current, direction)
 
-        while self.grid.is_within(position):
-            if self.grid.is_cell_filled(position):
-                break
+        while self._grid.is_within(position) and self._grid.is_cell_empty(position):
             current = position
             position = _next_position(current, direction)
 
         return current
 
     def _move_tile(self, tile: Tile, position: Position):
-        self.grid.remove_tile(tile)
+        self._grid.remove_tile(tile)
         tile.position = position
-        self.grid.insert_tile(tile)
+        self._grid.insert_tile(tile)
 
-    def _clean_metadata(self):
-        for tile in self.grid.tiles:
+    def _clean_tiles_metadata(self):
+        for tile in self._grid.tiles:
             tile.merged_from = None
 
-    def _merge_tiles(self, a, b):
-        merged = Tile(b.position, a.value * 2)
+    def _merge_tiles(self, a: Tile, b: Tile):
+        """Replaces tiles in the grid with a new ``Tile`` object at `b`'s position.
+
+        The merged tile's value is a sum of `a` and `b` values.
+
+        :param a: first Tile
+        :param b: second Tile
+        :return: new Tile object
+        """
+
+        merged = Tile(b.position, a.value + b.value)
         merged.merged_from = [a, b]
 
+        self._grid.remove_tile(a)
         self._move_tile(merged, b.position)
-        self.grid.remove_tile(a)
+
         return merged
 
-    def _traversals(self, direction: Direction):
-        xs = list(range(self.grid.width))
-        ys = list(range(self.grid.height))
+    def _traversals(self, direction: Direction) -> Iterator[Position]:
+        """Get positions to travers in the given direction.
+
+        Positions are sorted in the bottommost or rightmost
+        order for vertical or horizontal directions accordingly.
+
+        :param direction: the direction to travers
+        :return: iterator that yields Position objects
+                 representing nodes to travers in the given direction.
+
+        """
+
+        xs = list(range(self._grid.width))
+        ys = list(range(self._grid.height))
 
         if direction.value.x == 1:
             xs.reverse()
@@ -118,23 +188,3 @@ class Logic:
         for x, y in product(xs, ys):
             yield Position(x, y)
 
-    def _move(self, direction: Direction):
-        self._clean_metadata()
-
-        for position in self._traversals(direction):
-            tile = self.grid.get_cell(position)
-
-            if not tile:
-                continue
-
-            self._move_tile(tile, self._farthest_position(tile, direction))
-
-            if self._is_merge_available(tile, direction):
-                closest = self._next_merge(tile, direction)
-                merged = self._merge_tiles(tile, closest)
-                self.score += merged.value
-
-            if self.score == self.win_score:
-                pass
-
-        self.insert_random_tile()

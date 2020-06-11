@@ -1,7 +1,7 @@
 import random
 
-from typing import List, Optional, Iterable
 from enum import Enum
+from typing import List, Optional, Iterable
 
 
 class Position:
@@ -14,7 +14,7 @@ class Position:
         if isinstance(other, Position):
             return self.x == other.x and self.y == other.y
 
-        return super().__eq__(other)
+        return False
 
 
 class Direction(Enum):
@@ -31,6 +31,7 @@ class Tile:
         self._position = position
         self._value = value
 
+        # Handy attributes for UI entities and debugging
         self._previous_position = None
         self._merged_from = tuple()
 
@@ -50,18 +51,6 @@ class Tile:
     def merged_from(self):
         return self._merged_from
 
-    @merged_from.setter
-    def merged_from(self, _iter: Iterable):
-        if not _iter:
-            _iter = tuple()
-
-        for item in _iter:
-            if not isinstance(item, Tile):
-                raise TypeError("Tile can only be merged from other tiles. "
-                                f"Got `{type(item)}` instead.")
-
-        self._merged_from = tuple(_iter)
-
     @property
     def previous_position(self):
         return self._previous_position
@@ -72,10 +61,28 @@ class Tile:
 
     @position.setter
     def position(self, other: Position):
+        self._set_position(other)
 
+    @merged_from.setter
+    def merged_from(self, tiles: Iterable):
+        self._set_merged_from(tiles)
+
+    def _set_position(self, other: Position):
         # Backup position
         self._previous_position = self._position
         self._position = other
+
+    def _set_merged_from(self, tiles: Iterable):
+
+        if not tiles:
+            tiles = tuple()
+
+        for tile in tiles:
+            if not isinstance(tile, Tile):
+                raise TypeError("Tile can only be merged from other tiles. "
+                                f"Got `{type(tile)}` instead.")
+
+        self._merged_from = tuple(tiles)
 
 
 class Grid:
@@ -109,15 +116,18 @@ class Grid:
 
     def empty(self) -> None:
         """
-        Build the grid and fill it with empty cells.
+        Builds the grid and fills it with empty cells.
+
         :return: None
         """
+
         self._cells = [[None for _ in range(self._width)]
                        for _ in range(self._height)]
 
     def insert_tile(self, tile: Tile) -> bool:
         """
-        Insert new tile at its _position.
+        Inserts new ``Tile`` in the grid according to its ``position`` attribute.
+
         :return: bool True if inserted, False otherwise
         """
 
@@ -129,7 +139,9 @@ class Grid:
 
     def remove_tile(self, tile: Tile) -> bool:
         """
-        Remove tile at its _position if there is one.
+        Removes ``Tile`` from the grid according to its ``position`` attribute.
+        If no ``Tile`` found at this position returns ``False``.
+
         :return: bool True if removed, False otherwise
         """
 
@@ -140,13 +152,20 @@ class Grid:
         return True
 
     @property
-    def tiles(self):
+    def tiles(self) -> List[Tile]:
+        """
+        Returns list of ``Tile`` objects found in the grid.
+
+        :return: list of tiles
+        """
+
         tiles = list()
 
         for y, row in enumerate(self._cells):
             for x, tile in enumerate(row):
                 if tile:
                     tiles.append(tile)
+
         return tiles
 
     def get_cell(self, position: Position) -> Optional[Tile]:
@@ -169,9 +188,11 @@ class Grid:
     def get_empty_cell(self) -> Optional[Position]:
         """
         Get next empty cell in the grid.
+
         :return: tuple (x, y) of a randomly chosen empty cell
                  None if there are no empty cells
         """
+
         empty_tiles = list()
 
         for y, row in enumerate(self._cells):
@@ -181,5 +202,3 @@ class Grid:
 
         if empty_tiles:
             return random.choice(empty_tiles)
-
-        return None
