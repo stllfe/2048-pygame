@@ -25,14 +25,16 @@ class UserInterface(Listener):
 
         self.grid_spacing = 15
         self.inner_padding = 40
-        self.font_size = 16
+        self.font_size = 12
 
-        self.title_font = Font('./assets/font/ClearSans-Bold.ttf', self._rem_to_px(5))
-        self.tile_font = Font('./assets/font/ClearSans-Medium.ttf', self._rem_to_px(3))
+        self.title_font = Font('./assets/font/ClearSans-Bold.ttf', self._rem_to_px(8))
+        self.tile_font = Font('./assets/font/ClearSans-Bold.ttf', self._rem_to_px(5))
         self.title = self.title_font.render("2048", True, theme.FONT_COLOR_DARK)
 
         pygame.display.set_caption("2048 game by Oleg Pavlovich")
         pygame.display.update()
+
+        self._clear_window()
 
     def _clear_window(self):
         self.window.fill(theme.BACKGROUND)
@@ -58,7 +60,6 @@ class UserInterface(Listener):
 
     def _draw_grid(self, grid: Grid):
         tile_side = (self.grid_rect.width - self.grid_spacing * (self.grid_cols + 1)) / self.grid_cols
-
         utils.draw_rounded_rect(self.window, theme.GRID_COLOR, self.grid_rect, border_radius=8)
 
         x, y = self.grid_rect.topleft
@@ -92,7 +93,6 @@ class UserInterface(Listener):
 
     def notify(self, event):
         if isinstance(event, GridReadyEvent):
-            self._clear_window()
             self._set_grid_info(event.grid)
             self._draw_grid(event.grid)
         if isinstance(event, GridUpdateEvent):

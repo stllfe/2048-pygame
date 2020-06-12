@@ -28,21 +28,21 @@ class CPUClockController(Controller):
     def __init__(self, event_manager: EventManager, fps: int = 60):
         super().__init__(event_manager)
 
-        self.clock = Clock()
-        self.fps = fps
-        self.running = False
+        self._clock = Clock()
+        self._fps = fps
+        self._running = False
 
     def notify(self, event):
         if isinstance(event, QuitEvent):
-            self.running = False
+            self._running = False
 
     def tick(self):
-        self.clock.tick(self.fps)
+        self._clock.tick(self._fps)
 
     def run(self):
-        self.running = True
+        self._running = True
         try:
-            while self.running:
+            while self._running:
                 self.post(CPUTickEvent())
                 self.tick()
         except KeyboardInterrupt:
@@ -126,10 +126,3 @@ class GameController(Controller):
         elif isinstance(event, UserMoveEvent):
             self._logic.move(event.direction)
             self.post(GridUpdateEvent(self._logic.grid))
-
-    def run(self):
-        self._running = True
-        pass
-
-    def update(self):
-        pass
