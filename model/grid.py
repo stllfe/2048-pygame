@@ -67,9 +67,11 @@ class Tile:
     def merged_from(self, tiles: Iterable):
         self._set_merged_from(tiles)
 
-    def _set_position(self, other: Position):
+    def save_position(self):
         # Backup position
         self._previous_position = self._position
+
+    def _set_position(self, other: Position):
         self._position = other
 
     def _set_merged_from(self, tiles: Iterable):

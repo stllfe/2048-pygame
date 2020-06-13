@@ -59,3 +59,43 @@ def draw_bordered_rounded_rect(surface, color, rect, border_color, border_radius
         pygame.draw.rect(surface, color, rect_tmp)
     else:
         draw_rounded_rect(surface, color, rect_tmp, inner_radius)
+
+
+def draw_text(surface, text, color, rect, font, antialias=False, background=None):
+    rect = pygame.Rect(rect)
+    y = rect.top
+    line_spacing = -2
+
+    # Get the height of the font
+    font_height = font.size("Tg")[1]
+
+    for text in text.split('\n'):
+        while text:
+            i = 1
+
+            # Determine if the row of text will be outside our area
+            if y + font_height > rect.bottom:
+                break
+
+            # Determine maximum width of line
+            while font.size(text[:i])[0] < rect.width and i < len(text):
+                i += 1
+
+            # If we've wrapped the text, then adjust the wrap to the last word
+            if i < len(text):
+                i = text.rfind(" ", 0, i) + 1 if not nl else text.rfind("\n", 0, i) + 1
+
+            # Render the line and blit it to the surface
+            if background:
+                image = font.render(text[:i], 1, color, background)
+                image.set_colorkey(background)
+            else:
+                image = font.render(text[:i], antialias, color)
+
+            surface.blit(image, (rect.left, y))
+            y += font_height + line_spacing
+
+            # Remove the text we just blitted
+            text = text[i:]
+
+    return text

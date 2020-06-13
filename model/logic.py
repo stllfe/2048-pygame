@@ -4,7 +4,7 @@ from itertools import product
 from argparse import Namespace
 from typing import Optional, Iterator
 
-from grid import (
+from model.grid import (
     Direction,
     Position,
     Grid,
@@ -19,7 +19,11 @@ def _next_position(position: Position, direction: Direction) -> Position:
 
 
 class LogicState:
-    pass
+
+    def __init__(self, grid: Grid, params: Namespace, merged_total: int):
+        self.grid = grid
+        self.merged_total = merged_total
+        self.params = params
 
 
 class Logic:
@@ -28,6 +32,7 @@ class Logic:
         self._grid = Grid(width=params.width, height=params.height)
         self._start_tiles = params.start_tiles
         self._merged_total = 0
+        self._params = params
 
     @property
     def grid(self) -> Grid:
@@ -54,10 +59,18 @@ class Logic:
             return Tile(self._grid.get_empty_cell(), value)
 
     def save_state(self) -> LogicState:
-        pass
+        return LogicState(grid=self._grid, params=self._params, merged_total=self.merged_total)
 
-    def load_state(self, state: LogicState) -> bool:
-        pass
+    def load_state(self, state: LogicState):
+        class InvalidStateException(Exception):
+            pass
+        try:
+            self._start_tiles = state.params.start_tiles
+            self._merged_total = state.merged_total
+            self._params = state.params
+            self._grid = state.grid
+        except AttributeError as e:
+            raise InvalidStateException(f"Logic state is corrupted! {e}")
 
     def setup(self) -> bool:
         """Clears the grid and inserts ``start_tiles`` number of tiles.
@@ -65,7 +78,7 @@ class Logic:
         :return: bool False if couldn't insert the number of tiles given,
                  True otherwise
         """
-
+        self._merged_total = 0
         self._grid.empty()
         for _ in range(self._start_tiles):
             if not self.insert_random_tile():
@@ -80,11 +93,25 @@ class Logic:
             return True
         return False
 
+    def moves_available(self):
+        """Pretty expensive check"""
+
+        for direction in Direction:
+            for tile in self._grid.tiles:
+
+                if self._farthest_position(tile, direction) != tile.position:
+                    return True
+
+                if self._is_merge_available(tile, direction):
+                    return True
+
+        return False
+
     def move(self, direction: Direction):
         """Moves all the tiles in the given direction and merges them if needed.
 
         :param direction:
-        :return:
+        :return: None
         """
 
         # Remove tiles metadata from the previous move
@@ -109,7 +136,7 @@ class Logic:
         self.insert_random_tile()
 
     def _next_merge(self, tile: Tile, direction: Direction) -> Optional[Tile]:
-        # todo: add a docstring
+        # TODO: add a docstring
 
         position = _next_position(tile.position, direction)
 
@@ -139,6 +166,8 @@ class Logic:
 
     def _move_tile(self, tile: Tile, position: Position):
         self._grid.remove_tile(tile)
+
+        tile.save_position()
         tile.position = position
         self._grid.insert_tile(tile)
 
@@ -160,7 +189,7 @@ class Logic:
         merged.merged_from = [a, b]
 
         self._grid.remove_tile(a)
-        self._move_tile(merged, b.position)
+        self._grid.insert_tile(merged)
 
         return merged
 
@@ -187,4 +216,3 @@ class Logic:
 
         for x, y in product(xs, ys):
             yield Position(x, y)
-

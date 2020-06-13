@@ -4,24 +4,25 @@ import pygame
 
 from argparse import Namespace
 
-from controller import KeyboardController
-from controller import CPUClockController
-from controller import GameController
+from controller.keyboard import KeyboardController
+from controller.cpu import CPUClockController
+from controller.game import GameController
 
-from mediator import EventManager
-from storage import LocalStorageManager
-from ui import UserInterface
+from common.mediator import EventManager
+from storage.local import LocalStorageManager
+from view.ui import UserInterface
 
 
 if __name__ == "__main__":
     pygame.init()
 
+    # Load user defined game settings
     with open('config.yaml', 'r') as config:
-        defaults = yaml.safe_load(config)
+        params = yaml.safe_load(config)
 
-    params = Namespace(**defaults)
-    storage = LocalStorageManager()
-    ui = UserInterface(640, 960)
+    params = Namespace(**params)
+    storage = LocalStorageManager(path='./.games', hide_files=False)
+    ui = UserInterface(width=640, height=1024)
 
     # Event broker that serves MVC entities
     event_manager = EventManager()

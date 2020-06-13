@@ -1,28 +1,15 @@
 import pickle
 import logging
 
-from abc import ABC, abstractmethod
 from os import getcwd
 from os.path import join
-from typing import Any
 from pathlib import Path
+from typing import Any
+
+from storage.storage import StorageManager
+
 
 log = logging.getLogger(__name__)
-
-
-class StorageManager(ABC):
-
-    @abstractmethod
-    def get(self, username: str) -> Any:
-        pass
-
-    @abstractmethod
-    def set(self, username: str, value: Any):
-        pass
-
-    @abstractmethod
-    def delete(self, username: str):
-        pass
 
 
 class LocalStorageManager(StorageManager):
@@ -63,13 +50,17 @@ class LocalStorageManager(StorageManager):
         self._files = files
 
     def _save_data(self, username: str, value: Any):
-        save_path = Path(self._path) / f"{username}.data"
+        base_path = Path(self._path)
+        save_path = base_path / f"{username}.data"
+
+        if not base_path.exists():
+            base_path.mkdir(parents=True)
 
         if self._hide_files:
             save_path = save_path.with_name('.' + save_path.name)
 
         try:
-            with open(save_path, 'w') as file:
+            with open(str(save_path), 'wb') as file:
                 pickle.dump(value, file)
                 return True
 
@@ -94,6 +85,15 @@ class LocalStorageManager(StorageManager):
                 log.error(f"Error occurred while reading file `{data_path}`: {e}")
                 raise e
 
+    def _delete_data(self, username: str):
+        import os
+
+        if not self._files.get(username):
+            error = f"Can't find checkpoint file for user: '{username}'."
+            raise FileNotFoundError(error)
+
+        os.remove(self._files[username])
+
     def get(self, username: str) -> Any:
         return self._load_data(username)
 
@@ -103,5 +103,3 @@ class LocalStorageManager(StorageManager):
     def delete(self, username: str):
         return self._delete_data(username)
 
-    def _delete_data(self, username):
-        pass

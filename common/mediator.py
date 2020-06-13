@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 
 class EventGroup(Enum):
+    """Helps to filter recipient listeners for a certain event."""
 
     CONTROLLERS = auto()
     UI = auto()
@@ -31,8 +32,8 @@ class EventManager(object):
         from weakref import WeakKeyDictionary
         self.listeners = WeakKeyDictionary()
 
-    def register(self, listener: Listener, group=None):
-        self.listeners[listener] = group
+    def register(self, listener: Listener, event_group: EventGroup = None):
+        self.listeners[listener] = event_group
 
     def unregister(self, listener: Listener):
         if listener in self.listeners:
