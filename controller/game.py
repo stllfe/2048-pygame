@@ -68,7 +68,6 @@ class GameController(Controller):
         self._score = 0
         self._is_finished = False
 
-
     def _teardown(self):
         self._update_best()
         state = self._logic.save_state()

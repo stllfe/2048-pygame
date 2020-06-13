@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     params = Namespace(**params)
     storage = LocalStorageManager(path='./.games', hide_files=False)
-    ui = UserInterface(width=1024, height=960)
+    ui = UserInterface(width=640, height=960)
 
     # Event broker that serves MVC entities
     event_manager = EventManager()
