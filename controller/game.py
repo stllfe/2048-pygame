@@ -64,8 +64,10 @@ class GameController(Controller):
 
     def _restart_game(self):
         self._update_best()
-        self._score = 0
         self._setup_logic()
+        self._score = 0
+        self._is_finished = False
+
 
     def _teardown(self):
         self._update_best()

@@ -48,6 +48,11 @@ class UserInterface(Listener):
         pygame.display.set_caption("2048 Game by Oleg Pavlovich")
         pygame.display.update()
 
+    def _reset_background(self):
+        self.window.fill(theme.BACKGROUND)
+        self._setup_header()
+        self._setup_footer()
+
     def _setup_grid(self, grid: Grid) -> Rect:
         assert self._header
         assert self._footer
@@ -199,13 +204,20 @@ class UserInterface(Listener):
         pygame.display.update()
 
     def notify(self, event):
-        if not self._drawable:
-            return
-
         if isinstance(event, GameReadyEvent):
+
+            # Game was restarted with this flag
+            if not self._drawable:
+                self._reset_background()
+                self._drawable = True
+
             self._setup_grid(event.grid)
             self._draw_tiles(event.grid)
             self._draw_scores(score=event.score, best=event.best)
+
+        # If the game has ended this flag is raised
+        if not self._drawable:
+            return
 
         if isinstance(event, GridUpdateEvent):
             self._draw_tiles(event.grid)
@@ -217,3 +229,4 @@ class UserInterface(Listener):
             self._draw_scores(score=event.score, best=event.best)
             self._draw_message(f"Game over! Score {event.score}.\nPress r to restart or q to quit :)")
             self._drawable = False
+
