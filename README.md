@@ -11,7 +11,7 @@ In fact, I got some **goals in mind** while designing this game in Python.
 - [x] **Framework agnostic**: The main source code is almost dependency free. My idea was to avoid writing code for some target framework or library, but instead to build up simple and concise high-level abstractions. The pygame library used here was more of a proof of concept that these building blocks are enough for further development.
 
 ### Codestyle
-- [ ] **Redable and well documented**: I really admire the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html). I'd like to apply it here as well.
+- [ ] **Readable and well documented**: I really admire the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html). I'd like to apply it here as well.
 
 
 ### Features
