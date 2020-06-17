@@ -41,7 +41,7 @@ If you want to test out the current version do the following:
 pip install --upgrade pygame
 git clone https://github.com/stllfe/python-2048 .
 cd python-2048
-python -m main
+python3 -m main
 ```
 **You can edit the** ``config.yaml`` **to change:**
  - grid's dimensions
@@ -50,4 +50,4 @@ python -m main
  - winscore *(currently does nothing)*
 
 ### CAUTION
-Though you may change these properties however you like, do it conciously. Since there is neither validations, nor graphics scaling, you can easily mess up the grid, fonts or just crash the game by setting gridsize to like (100 x 100). 
+Though you may change these properties however you like, do it conciously. Since there are neither validations, nor graphics scaling, you can easily mess up the grid, fonts or just crash the game by setting gridsize to like 100 x 100. 
