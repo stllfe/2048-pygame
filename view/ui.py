@@ -37,7 +37,7 @@ class UserInterface(Listener):
         self._score = "SCORE"
         self._best = "BEST"
         self._caption = "Join the numbers and get to the 2048 tile!"
-        self._how_to = OrderedDict(move=['arrows', 'W, A, S, D'], restart=['r'], quit=['q', 'ESC'])
+        self._how_to = OrderedDict(move=['arrows', 'W, A, S, D'], restart=['R'], quit=['Q', 'ESC'])
 
         self.window.fill(theme.BACKGROUND)
 
@@ -105,7 +105,7 @@ class UserInterface(Listener):
             label_size = label_font.size(label)
             label_rect = Rect((tip_x, tip_y), label_size)
 
-            options = "on " + " or ".join(self._how_to[tip])
+            options = "with " + " or ".join(self._how_to[tip])
             options_font = theme.BASE_FONT
             options_size = options_font.size(options)
             options_rect = Rect((label_rect.right + margin_right, label_rect.y), options_size)

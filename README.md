@@ -38,10 +38,10 @@ As of 07/13/20 this project is still not finished. This means there is no setup 
 **At least Python ver. 3.7 required.** 
 If you want to test out the current version do the following:
 ```bash
-pip install --upgrade pygame
 git clone https://github.com/stllfe/python-2048 .
 cd python-2048
-python3 -m main
+pip install --upgrade pygame PyYAML
+python -m main
 ```
 **You can edit the** ``config.yaml`` **to change:**
  - grid's dimensions
