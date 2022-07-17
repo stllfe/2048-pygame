@@ -10,7 +10,7 @@ from controller.game import GameController
 
 from common.mediator import EventManager
 from storage.local import LocalStorageManager
-from view.ui import UserInterface
+from view.ui import UI
 
 
 if __name__ == "__main__":
@@ -21,15 +21,15 @@ if __name__ == "__main__":
         params = yaml.safe_load(config)
 
     params = Namespace(**params)
-    storage = LocalStorageManager(path='./.games', hide_files=False)
-    ui = UserInterface(width=640, height=960)
+    storage = LocalStorageManager(path=None, hide_files=False)
+    ui = UI(width=640, height=960)
 
     # Event broker that serves MVC entities
     event_manager = EventManager()
 
     # Main controllers
     keyboard = KeyboardController(event_manager)
-    spinner = CPUClockController(event_manager)
+    spinner = CPUClockController(event_manager, fps=30)
     game = GameController(params, storage, event_manager)
 
     # User interface needs to be attached explicitly
