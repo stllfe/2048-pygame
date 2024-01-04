@@ -1,6 +1,7 @@
 import sys
 import yaml
 import pygame
+import logging
 
 from argparse import Namespace
 
@@ -10,7 +11,10 @@ from controller.game import GameController
 
 from common.mediator import EventManager
 from storage.local import LocalStorageManager
-from view.ui import UI
+from view.ui import UserInterface
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 if __name__ == "__main__":
@@ -22,14 +26,14 @@ if __name__ == "__main__":
 
     params = Namespace(**params)
     storage = LocalStorageManager(path=None, hide_files=False)
-    ui = UI(width=640, height=960)
+    ui = UserInterface(width=640, height=960)
 
     # Event broker that serves MVC entities
     event_manager = EventManager()
 
     # Main controllers
     keyboard = KeyboardController(event_manager)
-    spinner = CPUClockController(event_manager, fps=30)
+    spinner = CPUClockController(event_manager)
     game = GameController(params, storage, event_manager)
 
     # User interface needs to be attached explicitly
